@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>wondoritos</title>
+<style>
+:root {
+  --bg: #000; --surface: #1c1c1e; --surface2: #2c2c2e; --surface3: #3a3a3c;
+  --text: #fff; --text2: rgba(255,255,255,.6); --text3: rgba(255,255,255,.35);
+  --blue: #0a84ff; --green: #30d158; --orange: #ff9f0a; --pink: #ff375f;
+  --purple: #bf5af2; --radius: 14px;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); min-height:100dvh; overflow-x:hidden; }
+
+/* === LANDING === */
+.landing { min-height:100dvh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px 20px; text-align:center; }
+.landing h1 { font-size:42px; font-weight:700; letter-spacing:-0.02em; margin-bottom:8px; }
+.landing h1 span { background:linear-gradient(135deg,var(--blue),var(--purple)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.landing p { font-size:16px; color:var(--text2); margin-bottom:32px; max-width:360px; line-height:1.5; }
+.landing .links { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; margin-bottom:40px; }
+.landing .links a { color:var(--text2); font-size:13px; text-decoration:none; display:flex; align-items:center; gap:4px; transition:color .2s; }
+.landing .links a:hover { color:var(--text); }
+.landing .app-grid { display:grid; grid-template-columns:repeat(3,76px); gap:20px; }
+.app-icon { display:flex; flex-direction:column; align-items:center; gap:6px; cursor:pointer; text-decoration:none; }
+.app-icon .icon { width:64px; height:64px; border-radius:16px; display:flex; align-items:center; justify-content:center; font-size:28px; transition:transform .15s; }
+.app-icon .icon:active { transform:scale(0.9); }
+.app-icon .label { font-size:11px; color:var(--text2); }
+.app-icon.ref .icon { background:linear-gradient(135deg,#1a1a2e,#16213e); border:1px solid rgba(255,255,255,.1); }
+.app-icon.soon .icon { background:var(--surface); border:1px dashed var(--surface3); opacity:.5; }
+.app-icon.soon .label { color:var(--text3); }
+
+/* === APP SCREEN === */
+.app-screen { display:none; min-height:100dvh; flex-direction:column; }
+.app-screen.active { display:flex; }
+.app-header { padding:12px 16px; display:flex; align-items:center; gap:12px; border-bottom:1px solid rgba(255,255,255,.08); position:sticky; top:0; background:rgba(0,0,0,.85); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); z-index:10; }
+.app-header .back { font-size:24px; cursor:pointer; color:var(--blue); background:none; border:none; padding:4px; }
+.app-header h2 { font-size:17px; font-weight:600; flex:1; }
+.app-header .view-toggle { display:flex; background:var(--surface); border-radius:8px; overflow:hidden; }
+.app-header .view-toggle button { padding:6px 12px; font-size:12px; border:none; background:none; color:var(--text2); cursor:pointer; }
+.app-header .view-toggle button.active { background:var(--surface3); color:var(--text); }
+
+/* === BREADCRUMB === */
+.breadcrumb { padding:8px 16px; font-size:12px; color:var(--text3); display:flex; gap:4px; align-items:center; }
+.breadcrumb span { cursor:pointer; color:var(--text2); }
+.breadcrumb span:hover { color:var(--text); }
+.breadcrumb span.current { color:var(--text); font-weight:500; }
+
+/* === FOLDER VIEW === */
+.folder-view { flex:1; padding:12px; }
+.folder-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(90px, 1fr)); gap:12px; }
+.folder-item { display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px 4px; border-radius:12px; cursor:pointer; transition:background .15s; text-align:center; }
+.folder-item:active { background:rgba(255,255,255,.05); }
+.folder-item .thumb { width:64px; height:64px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:28px; }
+.folder-item .thumb.folder { background:linear-gradient(180deg,#64b5f6,#1e88e5); }
+.folder-item .thumb.ref { background:var(--surface2); border:1px solid rgba(255,255,255,.08); overflow:hidden; position:relative; }
+.folder-item .thumb.ref img { width:100%; height:100%; object-fit:cover; }
+.folder-item .thumb.track { position:relative; }
+.folder-item .thumb.track::after { content:''; position:absolute; top:4px; right:4px; width:8px; height:8px; border-radius:50%; background:var(--green); }
+.folder-item .name { font-size:11px; color:var(--text); line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-all; }
+.folder-item .meta { font-size:9px; color:var(--text3); }
+.folder-item .tag { font-size:8px; padding:1px 5px; border-radius:4px; background:var(--surface3); color:var(--text2); margin-top:2px; }
+
+/* === FLOW VIEW === */
+.flow-view { flex:1; display:none; position:relative; overflow:auto; background:radial-gradient(circle at 50% 50%, rgba(10,132,255,.03) 0%, transparent 70%); }
+.flow-view.active { display:block; }
+.flow-canvas { position:relative; width:100%; min-height:calc(100dvh - 100px); padding:20px; }
+.flow-node { position:absolute; background:var(--surface); border:1px solid rgba(255,255,255,.1); border-radius:12px; padding:12px; min-width:120px; cursor:grab; user-select:none; transition:box-shadow .2s; }
+.flow-node:hover { box-shadow:0 0 20px rgba(10,132,255,.15); }
+.flow-node .node-icon { font-size:20px; margin-bottom:4px; }
+.flow-node .node-title { font-size:12px; font-weight:500; margin-bottom:2px; }
+.flow-node .node-meta { font-size:10px; color:var(--text3); }
+.flow-node.input { border-color:rgba(10,132,255,.3); }
+.flow-node.process { border-color:rgba(191,90,242,.3); }
+.flow-node.output { border-color:rgba(48,209,88,.3); }
+.flow-svg { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; }
+.flow-svg path { fill:none; stroke:rgba(255,255,255,.12); stroke-width:2; }
+.flow-svg path.active { stroke:var(--blue); stroke-width:2; opacity:.6; }
+
+/* === DETAIL PANEL === */
+.detail-panel { display:none; position:fixed; bottom:0; left:0; right:0; background:var(--surface); border-top-left-radius:16px; border-top-right-radius:16px; padding:20px; max-height:60dvh; overflow-y:auto; z-index:20; animation:slideUp .3s ease; }
+.detail-panel.open { display:block; }
+@keyframes slideUp { from { transform:translateY(100%); } to { transform:translateY(0); } }
+.detail-panel .handle { width:36px; height:4px; background:var(--surface3); border-radius:2px; margin:0 auto 16px; }
+.detail-panel h3 { font-size:17px; font-weight:600; margin-bottom:8px; }
+.detail-panel .detail-meta { font-size:13px; color:var(--text2); line-height:1.6; }
+.detail-panel .detail-tags { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+.detail-panel .detail-tags .tag { font-size:11px; padding:4px 10px; border-radius:8px; background:var(--surface2); color:var(--text2); }
+.detail-panel .memo { margin-top:12px; padding:10px; background:var(--surface2); border-radius:8px; font-size:13px; color:var(--text2); font-style:italic; border-left:3px solid var(--blue); }
+.detail-panel .connections { margin-top:12px; }
+.detail-panel .connections h4 { font-size:13px; color:var(--text3); margin-bottom:6px; }
+.detail-panel .conn-item { padding:6px 0; font-size:13px; display:flex; align-items:center; gap:6px; }
+.detail-panel .conn-item .dot { width:6px; height:6px; border-radius:50%; }
+.overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:15; }
+.overlay.open { display:block; }
+
+/* === ADD BUTTON === */
+.fab { position:fixed; bottom:24px; right:24px; width:52px; height:52px; border-radius:50%; background:var(--blue); border:none; color:#fff; font-size:28px; cursor:pointer; z-index:10; box-shadow:0 4px 20px rgba(10,132,255,.3); display:flex; align-items:center; justify-content:center; transition:transform .15s; }
+.fab:active { transform:scale(0.9); }
+</style>
+</head>
+<body>
+
+<!-- LANDING -->
+<div class="landing" id="landing">
+  <h1><span>wondoritos</span></h1>
+  <p>도리토스 먹으면서 앱 만드는 사람.<br>Build in public. Find moats.</p>
+  <div class="links">
+    <a href="https://instagram.com/wondoritos" target="_blank">📸 Instagram</a>
+    <a href="https://threads.com/@wondoritos" target="_blank">🧵 Threads</a>
+    <a href="https://x.com/wondoritos" target="_blank">𝕏 X</a>
+    <a href="https://youtube.com/@wondoritos" target="_blank">📺 YouTube</a>
+    <a href="https://reddit.com/u/wondoritos" target="_blank">🤖 Reddit</a>
+    <a href="https://note.com/wondoritos" target="_blank">📝 note</a>
+    <a href="https://github.com/wondollchoi" target="_blank">💻 GitHub</a>
+  </div>
+  <div class="app-grid">
+    <a class="app-icon ref" onclick="openApp('copyism')">
+      <div class="icon">📋</div>
+      <div class="label">copyism</div>
+    </a>
+    <a class="app-icon soon">
+      <div class="icon">🔧</div>
+      <div class="label">coming soon</div>
+    </a>
+    <a class="app-icon soon">
+      <div class="icon">🔧</div>
+      <div class="label">coming soon</div>
+    </a>
+  </div>
+</div>
+
+<!-- COPYISM APP -->
+<div class="app-screen" id="copyism-app">
+  <div class="app-header">
+    <button class="back" onclick="goBack()">‹</button>
+    <h2 id="app-title">copyism</h2>
+    <div class="view-toggle">
+      <button class="active" onclick="switchView('folder',this)">📁</button>
+      <button onclick="switchView('flow',this)">🔀</button>
+    </div>
+  </div>
+  <div class="breadcrumb" id="breadcrumb">
+    <span onclick="navigateTo('root')" class="current">copyism</span>
+  </div>
+
+  <!-- FOLDER VIEW -->
+  <div class="folder-view" id="folderView">
+    <div class="folder-grid" id="folderGrid"></div>
+  </div>
+
+  <!-- FLOW VIEW -->
+  <div class="flow-view" id="flowView">
+    <div class="flow-canvas" id="flowCanvas">
+      <svg class="flow-svg" id="flowSvg"></svg>
+    </div>
+  </div>
+
+  <button class="fab" onclick="addRef()">+</button>
+</div>
+
+<!-- DETAIL PANEL -->
+<div class="overlay" id="overlay" onclick="closeDetail()"></div>
+<div class="detail-panel" id="detailPanel">
+  <div class="handle"></div>
+  <h3 id="detailTitle"></h3>
+  <div class="detail-meta" id="detailMeta"></div>
+  <div class="detail-tags" id="detailTags"></div>
+  <div class="memo" id="detailMemo" style="display:none"></div>
+  <div class="connections" id="detailConns"></div>
+</div>
+
+<script>
+// === DATA ===
+const data = {
+  root: [
+    { id:'refs', type:'folder', name:'레퍼런스', icon:'📂', color:'folder', children:'refs' },
+    { id:'projects', type:'folder', name:'프로젝트', icon:'🗂️', color:'folder', children:'projects' },
+    { id:'outputs', type:'folder', name:'생성물', icon:'📤', color:'folder', children:'outputs' },
+  ],
+  refs: [
+    { id:'ref-marketing', type:'folder', name:'마케팅', icon:'📣', color:'folder', children:'ref-marketing' },
+    { id:'ref-product', type:'folder', name:'제품', icon:'📱', color:'folder', children:'ref-product' },
+    { id:'ref-insight', type:'folder', name:'인사이트', icon:'💡', color:'folder', children:'ref-insight' },
+    { id:'ref-files', type:'folder', name:'내 파일', icon:'💾', color:'folder', children:'ref-files' },
+    { id:'ref-ai', type:'folder', name:'AI 세션', icon:'🤖', color:'folder', children:'ref-ai' },
+  ],
+  'ref-marketing': [
+    { id:'r1', type:'ref', name:'@ianpark.vc', icon:'🧵', tracking:true, period:'매일', tag:'마케팅', memo:'앱 자급자족 관점이 핵심', usedIn:['p1','p3'] },
+    { id:'r2', type:'ref', name:'@ai_freaks.kr', icon:'📸', tracking:true, period:'주 2회', tag:'마케팅', memo:'Clutter 5개국 차트 진입 사례', usedIn:['p1'] },
+    { id:'r3', type:'ref', name:'Pochi 분석글', icon:'📋', tracking:false, tag:'마케팅', memo:'스레드 23.7만 조회→1.5K DL. 니즈 글이 핵심', usedIn:['p1','p3'] },
+  ],
+  'ref-product': [
+    { id:'r4', type:'ref', name:'changedetection.io', icon:'🔍', tracking:true, period:'주 1회', tag:'제품', memo:'추적 엔진 핵심 참고. Apache 2.0', usedIn:['p2'] },
+    { id:'r5', type:'ref', name:'MARV (marv-ai.com)', icon:'🃏', tracking:true, period:'주 1회', tag:'제품', memo:'가장 가까운 경쟁자. 1회성만, 추적 없음', usedIn:['p2'] },
+    { id:'r6', type:'ref', name:'Auto-card-news', icon:'💻', tracking:false, tag:'제품', memo:'카드뉴스 렌더 엔진 참고', usedIn:['p2','p1'] },
+  ],
+  'ref-insight': [
+    { id:'r7', type:'ref', name:'노정석 AI Frontier', icon:'🎙️', tracking:true, period:'주 1회', tag:'인사이트', memo:'RLVR 경계. 방향은 맞고 기울기는 과대평가', usedIn:['p3'] },
+    { id:'r8', type:'ref', name:'Hamel eval FAQ', icon:'📚', tracking:false, tag:'인사이트', memo:'error analysis가 가장 중요', usedIn:['p3'] },
+  ],
+  'ref-files': [
+    { id:'r9', type:'ref', name:'이력서_v4.pdf', icon:'📄', tracking:false, tag:'파일', memo:'2026-10 업데이트', usedIn:['p4'] },
+    { id:'r10', type:'ref', name:'포트폴리오.pptx', icon:'📊', tracking:false, tag:'파일', usedIn:['p4'] },
+  ],
+  'ref-ai': [
+    { id:'r11', type:'ref', name:'Claude 세션: copyism 기획', icon:'🤖', tracking:false, tag:'AI', memo:'조직도 설계, eval 구조, 마케팅 파이프라인', usedIn:['p1','p2','p3'] },
+    { id:'r12', type:'ref', name:'GPT 세션: 사업 아이디어', icon:'🤖', tracking:false, tag:'AI', usedIn:['p3'] },
+  ],
+  projects: [
+    { id:'p1', type:'project', name:'앱 홍보', icon:'📣', tag:'마케팅', refs:['r1','r2','r3','r6','r11'], outputs:['o1','o2'] },
+    { id:'p2', type:'project', name:'copyism 개발', icon:'🛠️', tag:'제품', refs:['r4','r5','r6','r11'], outputs:['o3'] },
+    { id:'p3', type:'project', name:'주간 인사이트', icon:'💡', tag:'인사이트', refs:['r1','r3','r7','r8','r11','r12'], outputs:['o4','o5'] },
+    { id:'p4', type:'project', name:'이력서 관리', icon:'📄', tag:'파일', refs:['r9','r10'], outputs:['o6'] },
+  ],
+  outputs: [
+    { id:'o1', type:'output', name:'카드뉴스 3장', icon:'🃏', tag:'카드뉴스', project:'p1', status:'생성됨' },
+    { id:'o2', type:'output', name:'스레드 글 초안', icon:'🧵', tag:'스레드', project:'p1', status:'승인 대기' },
+    { id:'o3', type:'output', name:'PRD v1', icon:'📋', tag:'문서', project:'p2', status:'완료' },
+    { id:'o4', type:'output', name:'영상 대본', icon:'🎬', tag:'대본', project:'p3', status:'생성됨' },
+    { id:'o5', type:'output', name:'주간 회고', icon:'📊', tag:'회고', project:'p3', status:'완료' },
+    { id:'o6', type:'output', name:'이력서 v5 초안', icon:'📄', tag:'문서', project:'p4', status:'승인 대기' },
+  ],
+};
+
+// All refs flat
+const allRefs = {};
+['ref-marketing','ref-product','ref-insight','ref-files','ref-ai'].forEach(k => {
+  (data[k]||[]).forEach(r => allRefs[r.id] = r);
+});
+const allProjects = {};
+data.projects.forEach(p => allProjects[p.id] = p);
+const allOutputs = {};
+data.outputs.forEach(o => allOutputs[o.id] = o);
+
+let currentPath = [];
+let currentView = 'folder';
+
+function openApp(name) {
+  document.getElementById('landing').style.display = 'none';
+  document.getElementById('copyism-app').classList.add('active');
+  currentPath = ['root'];
+  renderFolder('root');
+}
+
+function goBack() {
+  if (currentPath.length <= 1) {
+    document.getElementById('copyism-app').classList.remove('active');
+    document.getElementById('landing').style.display = 'flex';
+    return;
+  }
+  currentPath.pop();
+  renderFolder(currentPath[currentPath.length - 1]);
+}
+
+function navigateTo(id) {
+  const idx = currentPath.indexOf(id);
+  if (idx >= 0) {
+    currentPath = currentPath.slice(0, idx + 1);
+    renderFolder(id);
+  }
+}
+
+function renderFolder(folderId) {
+  const items = data[folderId] || [];
+  const grid = document.getElementById('folderGrid');
+  grid.innerHTML = '';
+  items.forEach(item => {
+    const el = document.createElement('div');
+    el.className = 'folder-item';
+    const isTracking = item.tracking ? ' track' : '';
+    const thumbClass = item.type === 'folder' ? 'folder' : 'ref' + isTracking;
+    el.innerHTML = `
+      <div class="thumb ${thumbClass}">${item.icon}</div>
+      <div class="name">${item.name}</div>
+      ${item.period ? `<div class="meta">${item.period}</div>` : ''}
+      ${item.tag ? `<div class="tag">${item.tag}</div>` : ''}
+      ${item.status ? `<div class="tag">${item.status}</div>` : ''}
+    `;
+    if (item.children) {
+      el.onclick = () => {
+        currentPath.push(item.children);
+        renderFolder(item.children);
+      };
+    } else {
+      el.onclick = () => showDetail(item);
+    }
+    grid.appendChild(el);
+  });
+  updateBreadcrumb();
+}
+
+function updateBreadcrumb() {
+  const bc = document.getElementById('breadcrumb');
+  const names = { root:'copyism', refs:'레퍼런스', projects:'프로젝트', outputs:'생성물',
+    'ref-marketing':'마케팅', 'ref-product':'제품', 'ref-insight':'인사이트', 'ref-files':'내 파일', 'ref-ai':'AI 세션' };
+  bc.innerHTML = currentPath.map((p, i) => {
+    const isLast = i === currentPath.length - 1;
+    return `<span onclick="navigateTo('${p}')" class="${isLast?'current':''}">${names[p]||p}</span>${isLast?'':' › '}`;
+  }).join('');
+}
+
+function showDetail(item) {
+  const panel = document.getElementById('detailPanel');
+  const overlay = document.getElementById('overlay');
+  document.getElementById('detailTitle').textContent = item.icon + ' ' + item.name;
+
+  let meta = '';
+  if (item.tracking) meta += `🟢 추적 중 · ${item.period}<br>`;
+  if (item.tag) meta += `태그: ${item.tag}<br>`;
+  if (item.status) meta += `상태: ${item.status}<br>`;
+  if (item.project) meta += `프로젝트: ${allProjects[item.project]?.name || item.project}<br>`;
+  document.getElementById('detailMeta').innerHTML = meta;
+
+  const memoEl = document.getElementById('detailMemo');
+  if (item.memo) { memoEl.textContent = '💭 "' + item.memo + '"'; memoEl.style.display = 'block'; }
+  else { memoEl.style.display = 'none'; }
+
+  const conns = document.getElementById('detailConns');
+  conns.innerHTML = '';
+  if (item.usedIn && item.usedIn.length) {
+    let html = '<h4>📌 이 레퍼런스가 쓰인 곳</h4>';
+    item.usedIn.forEach(pid => {
+      const p = allProjects[pid];
+      if (p) html += `<div class="conn-item"><div class="dot" style="background:var(--purple)"></div>${p.icon} ${p.name}</div>`;
+    });
+    conns.innerHTML = html;
+  }
+  if (item.refs && item.refs.length) {
+    let html = '<h4>📎 소스 레퍼런스</h4>';
+    item.refs.forEach(rid => {
+      const r = allRefs[rid];
+      if (r) html += `<div class="conn-item"><div class="dot" style="background:var(--blue)"></div>${r.icon} ${r.name}</div>`;
+    });
+    conns.innerHTML += html;
+  }
+  if (item.outputs && item.outputs.length) {
+    let html = '<h4>📤 생성물</h4>';
+    item.outputs.forEach(oid => {
+      const o = allOutputs[oid];
+      if (o) html += `<div class="conn-item"><div class="dot" style="background:var(--green)"></div>${o.icon} ${o.name} (${o.status})</div>`;
+    });
+    conns.innerHTML += html;
+  }
+
+  panel.classList.add('open');
+  overlay.classList.add('open');
+}
+
+function closeDetail() {
+  document.getElementById('detailPanel').classList.remove('open');
+  document.getElementById('overlay').classList.remove('open');
+}
+
+function switchView(view, btn) {
+  currentView = view;
+  document.querySelectorAll('.view-toggle button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const fv = document.getElementById('folderView');
+  const flv = document.getElementById('flowView');
+  if (view === 'folder') { fv.style.display = 'block'; flv.classList.remove('active'); }
+  else { fv.style.display = 'none'; flv.classList.add('active'); renderFlow(); }
+}
+
+function renderFlow() {
+  const canvas = document.getElementById('flowCanvas');
+  const svg = document.getElementById('flowSvg');
+  // Clear existing nodes (keep svg)
+  canvas.querySelectorAll('.flow-node').forEach(n => n.remove());
+  svg.innerHTML = '';
+
+  const nodes = [];
+  const refFolders = [
+    { id:'rf1', x:30, y:30, icon:'📣', title:'마케팅 레퍼', meta:'3 refs', type:'input' },
+    { id:'rf2', x:30, y:130, icon:'📱', title:'제품 레퍼', meta:'3 refs', type:'input' },
+    { id:'rf3', x:30, y:230, icon:'💡', title:'인사이트', meta:'2 refs', type:'input' },
+    { id:'rf4', x:30, y:330, icon:'💾', title:'내 파일', meta:'2 files', type:'input' },
+  ];
+  const projects = [
+    { id:'pf1', x:200, y:50, icon:'📣', title:'앱 홍보', meta:'→ 카드뉴스, 스레드', type:'process' },
+    { id:'pf2', x:200, y:150, icon:'🛠️', title:'copyism 개발', meta:'→ PRD', type:'process' },
+    { id:'pf3', x:200, y:250, icon:'💡', title:'주간 인사이트', meta:'→ 대본, 회고', type:'process' },
+    { id:'pf4', x:200, y:350, icon:'📄', title:'이력서 관리', meta:'→ 이력서 v5', type:'process' },
+  ];
+  const outputs = [
+    { id:'of1', x:380, y:30, icon:'🃏', title:'카드뉴스', meta:'생성됨', type:'output' },
+    { id:'of2', x:380, y:100, icon:'🧵', title:'스레드 글', meta:'승인 대기', type:'output' },
+    { id:'of3', x:380, y:170, icon:'📋', title:'PRD v1', meta:'완료', type:'output' },
+    { id:'of4', x:380, y:240, icon:'🎬', title:'영상 대본', meta:'생성됨', type:'output' },
+    { id:'of5', x:380, y:310, icon:'📊', title:'주간 회고', meta:'완료', type:'output' },
+    { id:'of6', x:380, y:380, icon:'📄', title:'이력서 v5', meta:'승인 대기', type:'output' },
+  ];
+
+  const allNodes = [...refFolders, ...projects, ...outputs];
+  allNodes.forEach(n => {
+    const el = document.createElement('div');
+    el.className = `flow-node ${n.type}`;
+    el.style.left = n.x + 'px';
+    el.style.top = n.y + 'px';
+    el.innerHTML = `<div class="node-icon">${n.icon}</div><div class="node-title">${n.title}</div><div class="node-meta">${n.meta}</div>`;
+    canvas.appendChild(el);
+    n.el = el;
+  });
+
+  // Draw connections
+  const connections = [
+    ['rf1','pf1'],['rf1','pf3'],
+    ['rf2','pf1'],['rf2','pf2'],
+    ['rf3','pf3'],
+    ['rf4','pf4'],
+    ['pf1','of1'],['pf1','of2'],
+    ['pf2','of3'],
+    ['pf3','of4'],['pf3','of5'],
+    ['pf4','of6'],
+  ];
+
+  const nodeMap = {};
+  allNodes.forEach(n => nodeMap[n.id] = n);
+
+  connections.forEach(([from, to]) => {
+    const f = nodeMap[from], t = nodeMap[to];
+    if (!f || !t) return;
+    const fx = f.x + 130, fy = f.y + 25;
+    const tx = t.x, ty = t.y + 25;
+    const mx = (fx + tx) / 2;
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d', `M${fx},${fy} C${mx},${fy} ${mx},${ty} ${tx},${ty}`);
+    path.classList.add('active');
+    svg.appendChild(path);
+  });
+
+  canvas.style.minHeight = '450px';
+  canvas.style.minWidth = '520px';
+}
+
+function addRef() {
+  alert('레퍼런스 추가\n\n링크 붙여넣기 / 사진 첨부 / 텍스트 입력\n→ 1회성 or 추적 선택\n→ 태그 선택\n→ 코멘트 (선택)');
+}
+</script>
+</body>
+</html>
